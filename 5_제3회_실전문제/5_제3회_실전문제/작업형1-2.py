@@ -14,6 +14,20 @@ import pandas as pd
 path = r'C:\ITWILL\7_BigGisa\5_제3회_실전문제\data'
 a = pd.read_csv(path +'/births_num.csv', encoding='euc-kr') 
 
+df = a.copy()
+df.shape # (5, 106)
+df.info()
+df.columns
+df
 
+year2018 = df[df['year']==2018]
+year2018.shape
+year2018 = year2018.fillna(0)
+year2018 = year2018.T
+year2018 = year2018.astype('float')
+result = year2018[year2018 > year2018.mean()]
+result.isnull().sum()
+year2018.shape
 
-
+result = 106 - 85
+print(result) # 21개

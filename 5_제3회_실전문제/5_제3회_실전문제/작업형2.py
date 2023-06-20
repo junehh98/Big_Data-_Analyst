@@ -59,36 +59,48 @@
 # (라) 데이터 파일 읽기 
 import pandas as pd
 path = r'C:\ITWILL\7_BigGisa\5_제3회_실전문제\data'
-X_test = pd.read_csv(path +'/X_test.csv', encoding='euc-kr')  # 평가용 X변수
-X_train = pd.read_csv(path + '/X_train.csv', encoding='euc-kr') # 훈련용 X변수 
+x_test = pd.read_csv(path +'/X_test.csv', encoding='euc-kr')  # 평가용 X변수
+x_train = pd.read_csv(path + '/X_train.csv', encoding='euc-kr') # 훈련용 X변수 
 y_train = pd.read_csv(path + '/y_train.csv', encoding='euc-kr') # 훈련용 y변수 
 
 
 
 ### 단계1. 데이터 전처리 & 특징공학 
+x_test_drop = x_test.drop(columns = 'Date')
+x_train_drop = x_train.drop(columns = 'Date')
 
-# 1) DF 병합 : 원본 자료 보관   
-df = pd.merge(X_train, y_train, on='Date') # 공통칼럼(o)
+x_train_drop.isnull().sum()
+x_test_drop.isnull().sum()
 
-# 2) 칼럼 제거 
-df = df.drop(['Date'], axis = 1)
-df.shape # (256, 12)
+# train변수 결측치 처리
+x_train_drop['Sunshine'] = x_train_drop['Sunshine'].fillna(x_train_drop['Sunshine'].mean())
+x_train_drop['WindGustSpeed'] = x_train_drop['WindGustSpeed'].fillna(x_train_drop['WindGustSpeed'].mean())
 
-# 3) 결측치 처리
-df.isnull().sum() #  결측치 변수 : Sunshine, WindGustSpeed
 
-# 결측치 제거 
-df = df.dropna()
+# test변수 결측치 처리
+x_test_drop['Sunshine'] = x_test_drop['Sunshine'].fillna(x_test_drop['Sunshine'].mean())
+x_test_drop['WindGustSpeed'] = x_test_drop['WindGustSpeed'].fillna(x_test_drop['WindGustSpeed'].mean())
+
 
 
 # 4) 인코딩 : label encoding 
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
-df.info() # object형 변수 확인 
-df['WindGustDir'] = LabelEncoder().fit_transform(df['WindGustDir'])
 
+
+x_train_drop.info() # object형 변수 확인 
+x_train_drop['WindGustDir'] = LabelEncoder().fit_transform(x_train_drop['WindGustDir'])
+x_test_drop['WindGustDir'] = LabelEncoder().fit_transform(x_test_drop['WindGustDir'])
+
+
+
+
+x_test_drop = x_test_drop[x_train_drop.columns]
+
+y = y_train['rain']
 
 # 5) 스케일링 : 트리계열  
+'''
 from sklearn.preprocessing import MinMaxScaler 
 
 # 1) X, y변수 분리 
@@ -100,44 +112,66 @@ X = MinMaxScaler().fit_transform(X)
 # 스케일링 확인 
 X.min()
 X.max()
-
+'''
 
 ### 단계2. 훈련셋/검증셋 나누기 
 from sklearn.model_selection import train_test_split    
 
 x_train, x_val, y_train, y_val = train_test_split(
-    X, y, random_state=123)
+    x_train_drop, y, random_state=123)
 
 
 ### 단계3. 사용할 모델 정하기 
 from sklearn.ensemble import RandomForestClassifier 
 
 # 1) model 학습 : 성능 비교 & model 선정  
-rf_model = RandomForestClassifier(random_state=123).fit(x_train, y_train)
+model = RandomForestClassifier(n_estimators = 1000,
+                               max_features = 50,
+                               max_depth = 5,
+                               random_state=123)
 
 # 2) model 평가 : 예측력 높은 model 선택 
-rf_model.score(x_train, y_train) 
-rf_model.score(x_val, y_val) 
+
+
 
 # 3) 전체 훈련셋으로 model 학습 
-final_model = RandomForestClassifier(random_state=123).fit(X, y)
+model.fit(x_train, y_train)
 
+model.score(x_train, y_train) 
+model.score(x_val, y_val) 
+
+train_predict = model.predict(x_train)
+train_predict_proba = model.predict_proba(x_train)[:,1]
+
+val_predict = model.predict(x_val)
+val_predict_proba = model.predict_proba(x_val)[:,1]
+
+
+from sklearn.metrics import roc_auc_score
+
+print('train_roc_auc_score :', roc_auc_score(y_train, train_predict_proba))
+print('val_roc_auc_score :', roc_auc_score(y_val, val_predict_proba))
+
+test_predict = model.predict(x_test_drop)
+test_predict_proba = model.predict_proba(x_test_drop)[:,1]
+
+result = pd.DataFrame({'Date' : x_test.Date, 'rain' : test_predict_proba})
 
 ### 단계4. best 파라미터 찾기 : [생략]
 
 
 ### 단계5. test 데이터 예측값 구하기
-X_test.info() # 평가셋 확인 
+#X_test.info() # 평가셋 확인 
 
 # 1) date와 X 분리 
-date = X_test['Date'] # Date 칼럼 보관
-x_test = X_test.drop(['Date'], axis = 1) 
+#date = X_test['Date'] # Date 칼럼 보관
+#x_test = X_test.drop(['Date'], axis = 1) 
 
 # 2) 결측치 처리
-x_test.isnull().sum() #  Sunshine, WindGustSpeed
+#x_test.isnull().sum() #  Sunshine, WindGustSpeed
 
-x_test['Sunshine'] = x_test['Sunshine'].fillna(0)
-x_test['WindGustSpeed'] = x_test['WindGustSpeed'].fillna(0)
+#x_test['Sunshine'] = x_test['Sunshine'].fillna(0)
+#x_test['WindGustSpeed'] = x_test['WindGustSpeed'].fillna(0)
 
 # 3) 인코딩 
 x_test['WindGustDir'] = LabelEncoder().fit_transform(x_test['WindGustDir'])
@@ -155,7 +189,7 @@ pred = final_model.predict_proba(x_test) # 확률 예측
 rain = pred[:, 1]
 
 # 3) df 생성 
-result = pd.DataFrame({'Date' : date, 'rain' : rain})
+result = pd.DataFrame({'Date' : Date, 'rain' : rain})
 
 # 4) file save 
 result.to_csv(path + '/0001234.csv', index = False)

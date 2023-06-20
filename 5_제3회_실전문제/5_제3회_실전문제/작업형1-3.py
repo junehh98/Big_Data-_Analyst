@@ -14,4 +14,7 @@ import pandas as pd
 path = r'C:\ITWILL\7_BigGisa\5_제3회_실전문제\data'
 a = pd.read_csv(path +'/stock.csv') 
 
-
+df = a.copy()
+target = df.isnull().sum()
+result = target.sort_values(ascending=False).index[0]
+print(result)

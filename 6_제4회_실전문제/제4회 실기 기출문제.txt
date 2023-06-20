@@ -1,0 +1,247 @@
+제4회 실기 기출문제 복기 
+
+#################################
+Q1. 단답형(30점) : 빅데이터관련 용어
+#################################
+
+1. 제이슨 (json) :  '속성과 값의 쌍' 형태로 표현 
+
+2. MSE : 측정값 기초로 한 제곱 합, 그것을 최소로 하는 값 구해 측정 결과 처리, 오차 제곱 합 가장 작은 해 
+
+3. 표준화 : 정규분포가 아닌 데이터를 정규분포에 가깝게 만들거나 데이터 분산을 안정화하는 기법, 람다값 변환형태 결정 
+
+4. 차원축소법  : PCA 같은 방법 
+
+5. SOM : 군집분석 신경망/ 대뇌피질, 시각피질 학습 과정 기반 / 인공신경망, 클러스터링
+
+6. 정규성  : 선형회귀분석의 기본 가정, 오차의 분포 = 정규분포 만족
+
+7. SVM : 초평면 이용  
+
+8. 드롭아웃  : 은닉층 뉴런 임의 삭제 과적합 방지 
+
+9. 스쿱 : 정형자료 수집기술
+
+10. F1 = 2 * (precision * recall) / (precision + recall) 
+
+
+###################################
+Q2.  작업형1(30점) : 데이터 처리 & 통계
+################################### 
+
+1. y칼럼 1,3사분위수 구하고 / 두 수 차이 절대값 구해서 / 정수로 출력해
+
+import pandas as pd 
+import numpy as np 
+
+# print(dir(np)) 
+
+df = pd.read_csv('data/data1.csv') 
+
+q1 = df['y'].quantile(.25)  # 제1사분위수 
+q3 = df['y'].quantile(.75)  # 제3사분위수 
+
+q_a = np.abs(q1-q3) # 절댓값 
+print(int(q_a)) # 36 
+
+​
+2.  페이스북의 love 반응(num_loves)과 wow 반응(num_wows)을
+      매우 긍정적인 반응의 수(positive)로 정의하고, 
+      전체 반응 수(num_reactions)에서 매우 긍정적인 반응의 수가 
+      차지하는 비율 계산, 그 비율이 0.5보다 작고 0.4보다 
+      크며 유형이 비디오인 건수를 정수로 출력하시오.
+
+import pandas as pd 
+import numpy as np 
+
+df = pd.read_csv('data/facebook_live1.csv') 
+# print(df) 
+
+positive = df['num_loves'] + df['num_wows'] 
+
+positive2 = positive / df['num_reactions'] # 비율계산 
+
+positive2 = pd.DataFrame({'ratio': positive2}) 
+
+# print(positive2) 
+
+# print(help(pd.concat)) 
+
+df = pd.concat([df,positive2], axis = 1) 
+
+# print(df) df = df[df['ratio'] < 0.5] 
+
+# print(df) df = df[df['ratio'] > 0.4] 
+
+# print(df) df = df[df['status_type'] == 'video'] 
+
+print(int(df['status_type'].value_counts())) 
+​
+
+3. 넷플릭스 / 2018년 1월 중 넷플릭스에 등록된 콘텐츠 중에서 'United Kingdom' 단독 제작한 콘텐츠의 수를 정수로 
+
+# print(df[df['date_added'] == 'January 1, 2018'][df['country']=='United Kingdom']) 
+
+# print(df[df['date_added'] == 'January 2, 2018'][df['country']=='United Kingdom']) 
+
+# print(df[df['date_added'] == 'January 3, 2018'][df['country']=='United Kingdom']) 
+
+...
+
+# print(df[df['date_added'] == 'January 31, 2018'][df['country']=='United Kingdom']) 
+
+​
+#####################################
+Q3.  작업형2(40점) : 데이터 모형 구축 & 평가 
+#####################################
+  세분화 시장(Segmentation) 예측 모델 개발하고, 개발한 모델을 기반하여 
+  평가용 데이터 고객이 속할 세분화 시장의 예측 결과를 아래 지시된 형식의 
+  csv 파일로 생성하여 제출하시오.
+
+         ​Segmentation_pred
+     1              2
+     2              1 
+     3              2
+     4              4
+             :
+        
+
+import pandas as pd
+import sklearn
+
+a = pd.read_csv("data/Insurance_train.csv") 
+b = pd.read_csv("data/Insurance_x_test.csv") 
+
+​
+
+# 0. 데이터 분리 
+
+y_train = pd.DataFrame(df['Segmentation']) 
+
+x_train = df.drop(columns = 'Segmentation') 
+
+# print(x_train) 
+
+# print(y_train) 
+
+x_test = df_test
+
+# print(x_test)
+
+​
+
+# 1. 결측치 
+
+# print(y_train.isnull().sum()) 
+
+# print(x_train.isnull().sum()) 
+
+# print(x_test.isnull().sum())
+
+​
+
+# 2. 수치형 변수 
+
+from sklearn.preprocessing import RobustScaler 
+
+cols = ['Age', 'Work_Experience', 'Family_Size'] 
+
+for col in cols: 
+
+  s = RobustScaler() 
+
+  x_train[cols] = s.fit_transform(x_train[cols])
+
+  x_test[cols] = s.transform(x_test[cols])
+
+# print(x_train[['Age', 'Work_Experience', 'Family_Size']]) 
+
+# print(x_test[['Age', 'Work_Experience', 'Family_Size']]) 
+
+​
+
+# 3. 범주형 변수 
+
+# 3.1. 0 or 1 변수 
+
+x_train['Gender'] = pd.get_dummies(x_train['Gender'], drop_first=True) 
+
+x_train['Ever_Married'] = pd.get_dummies(x_train['Ever_Married'], drop_first=True) 
+
+x_train['Graduated'] = pd.get_dummies(x_train['Graduated'], drop_first=True) 
+
+x_test['Gender'] = pd.get_dummies(x_test['Gender'], drop_first=True) 
+
+x_test['Ever_Married'] = pd.get_dummies(x_test['Ever_Married'], drop_first=True) 
+
+x_test['Graduated'] = pd.get_dummies(x_test['Graduated'], drop_first=True) 
+
+​
+
+# 3.2. Label 변수 
+
+from sklearn.preprocessing import LabelEncoder 
+
+encoder = LabelEncoder() 
+
+x_train['Profession'] = encoder.fit_transform(x_train['Profession']) 
+
+# print(x_train['Profession']) 
+
+x_train['Spending_Score'] = encoder.fit_transform(x_train['Spending_Score']) 
+
+# print(x_train['Spending_Score']) 
+
+x_test['Profession'] = encoder.fit_transform(x_test['Profession']) 
+
+# print(x_train['Profession']) x_test['Spending_Score'] = encoder.fit_transform(x_test['Spending_Score']) 
+
+# print(x_train['Spending_Score']) 
+
+# print(x_train) 
+
+# print(x_test) 
+
+# print(x_train.corr()) 
+
+# print(x_test.corr()) 
+
+​
+
+# 4. 예측 모델 확인 
+
+from sklearn.model_selection import train_test_split 
+
+X_tr, X_te, y_tr, y_te = train_test_split(x_train, y_train, test_size = 0.2, random_state = 2000) 
+
+from sklearn.ensemble import RandomForestClassifier 
+
+model = RandomForestClassifier(n_estimators = 300, max_depth = 10, random_state = 2000) 
+
+model.fit(X_tr, y_tr.values.ravel()) 
+
+y_te_predict = model.predict(X_te) 
+
+y_te_predict = pd.DataFrame(y_te_predict) 
+
+​
+
+from sklearn.metrics import f1_score 
+
+# print(help(f1_score)) 
+
+# print(f1_score(y_te, y_te_predict, average='macro')) 
+
+​
+
+# 5. 결과값 
+
+y_test_predict = model.predict(x_test) 
+
+y_test_predict = pd.DataFrame({'Segmentation_pred': y_test_predict}) 
+
+# print(y_test_predict) y_test_predict.to_csv('004001856.csv', index=False)
+
+# res = pd.read_csv('004001856.csv') 
+
+# print(res)

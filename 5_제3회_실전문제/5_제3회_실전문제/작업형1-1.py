@@ -15,8 +15,15 @@ import pandas as pd
 path = r'C:\ITWILL\7_BigGisa\5_제3회_실전문제\data'
 a = pd.read_csv(path +'/mtcars.csv')  
 
+target = a.dropna()
+target.isnull().sum()
 
+target2 = target.head(int(len(target)*0.7))
+# target2 = target.iloc[:len(target)*0.7]
 
+target.shape
+target2.shape
 
-
-
+result = target2['mpg'].quantile(0.75)
+result = int(result)
+print(result)
